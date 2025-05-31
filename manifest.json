@@ -1,0 +1,66 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Bookmark & Settings Pro",
+  "version": "2.0.0",
+  "description": "Advanced YouTube bookmarking with timestamp notes, video settings preservation, and seamless playback restoration.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "alarms",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.youtu.be/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/watch*",
+        "*://*.youtube.com/embed/*",
+        "*://*.youtu.be/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "all_frames": true,
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "YouTube Bookmarks & Settings"
+  },
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "commands": {
+    "bookmark-timestamp": {
+      "suggested_key": {
+        "default": "Ctrl+B",
+        "mac": "Command+B"
+      },
+      "description": "Bookmark current timestamp"
+    },
+    "toggle-settings-prompt": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Toggle settings save prompt"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["styles.css"],
+      "matches": ["*://*.youtube.com/*", "*://*.youtu.be/*"]
+    }
+  ]
+}
