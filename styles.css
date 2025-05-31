@@ -1,0 +1,791 @@
+/* Ensure the entire popup page has a consistent background and size */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #2b2a33;
+  width: 380px;
+  min-height: 400px;
+  height: auto;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Enhanced Popup Styles */
+.popup-container {
+  width: 380px;
+  max-height: 600px;
+  min-height: 400px;
+  padding: 24px;
+  background: #2b2a33;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.popup-container h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-align: center;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.header-icon {
+  font-size: 24px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.section {
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section h2::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  background: #ffd700;
+  border-radius: 2px;
+}
+
+.section-icon {
+  font-size: 20px; /* Increased size for prominence */
+  color: #ffd700; /* Golden color to match theme */
+  background: rgba(255, 215, 0, 0.1); /* Subtle background to make it pop */
+  border-radius: 50%;
+  padding: 4px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+  transition: transform 0.2s ease;
+}
+
+.section-icon:hover {
+  transform: scale(1.1); /* Subtle hover effect */
+}
+
+#bookmark-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#bookmark-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+#bookmark-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+#bookmark-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.bookmark-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 3px solid transparent;
+  transition: background 0.2s ease, border-left-color 0.2s ease, transform 0.2s ease;
+}
+
+.bookmark-item:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-left-color: #ffd700;
+  transform: translateX(2px);
+}
+
+.bookmark-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bookmark-time {
+  font-weight: 600;
+  color: #ffd700;
+  font-size: 14px;
+}
+
+.bookmark-note {
+  font-size: 12px;
+  color: #b0b0b0;
+  opacity: 0.9;
+  font-style: italic;
+}
+
+.bookmark-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play-bookmark {
+  background: linear-gradient(45deg, #4caf50, #45a049);
+  color: #fff;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-bookmark:hover {
+  background: linear-gradient(45deg, #45a049, #388e3c);
+  transform: scale(1.05);
+}
+
+.delete-bookmark {
+  background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+  color: #fff;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-bookmark:hover {
+  background: linear-gradient(45deg, #ff5252, #d32f2f);
+  transform: scale(1.05);
+}
+
+#settings-display {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #e0e0e0;
+}
+
+.setting-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+  opacity: 0.9;
+  color: #ffd700;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.setting-label {
+  font-weight: 500;
+  flex: 1;
+}
+
+.setting-value {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #ffffff;
+}
+
+/* Updated Toggle Section with Larger Checkbox */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 8px 20;
+}
+
+.toggle-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-input {
+  width: 24px;
+  height: 24px;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.toggle-input:checked {
+  background: linear-gradient(135deg, #4caf50, #388e3c);
+  border-color: #4caf50;
+}
+
+.toggle-input:checked::after {
+  content: '✔';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.toggle-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
+}
+
+.toggle-label {
+  display: none;
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px; /* Increased gap for better separation */
+  flex: 1;
+}
+
+.toggle-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f5f5f5;
+  letter-spacing: 0.4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.toggle-description {
+  font-size: 13px;
+  color: #e0e0e0;
+  line-height: 1.5;
+  opacity: 0.8; /* Slightly reduced opacity for better hierarchy */
+  font-style: italic;
+}
+
+/* Button Styles */
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-icon {
+  font-size: 16px;
+}
+
+.btn-text {
+  font-size: 12px;
+}
+
+#clear-data {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+#clear-data:hover {
+  background: linear-gradient(45deg, #ff5252, #d32f2f);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+/* Extension Info */
+.extension-info {
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.info-icon {
+  font-size: 16px;
+}
+
+.shortcuts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.shortcut-item:last-child {
+  border-bottom: none;
+}
+
+.shortcut-item kbd {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.shortcut-item span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Content Script Styles - Improved Button Visibility */
+.yt-bookmark-btn {
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0; /* Remove padding to match YouTube's button style */
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 0; /* Remove font-size influence to prevent alignment issues */
+  display: inline-flex; /* Use inline-flex to match YouTube's button alignment */
+  align-items: center;
+  justify-content: center; /* Center the SVG horizontally */
+  transition: all 0.2s ease;
+  height: 36px; /* Match YouTube's button height */
+  width: 36px; /* Match YouTube's button width for consistency */
+  position: relative;
+  z-index: 1000;
+  vertical-align: middle; /* Ensure vertical alignment with other buttons */
+  box-sizing: border-box; /* Ensure padding/border don't affect size */
+  margin-bottom: 30px;
+}
+
+.yt-bookmark-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.yt-bookmark-btn svg {
+  width: 34px;
+  height: 34px;
+  fill: currentColor;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+/* Ensure button doesn't interfere with other controls */
+.ytp-right-controls .yt-bookmark-btn {
+  margin-right: 4px;
+}
+
+/* Bookmark Modal Styles */
+/* Overlay for the bookmark modal */
+/* Bookmark Modal Styles - Updated to match dark theme */
+
+/* Overlay for the bookmark modal */
+.yt-bookmark-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7); /* Darker overlay for better contrast */
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(2px); /* Add subtle blur effect */
+}
+
+/* Modal container - Updated to match popup theme */
+.yt-bookmark-modal {
+  background: #2b2a33; /* Match main popup background */
+  border-radius: 12px; /* Match popup border radius */
+  padding: 24px; /* Match popup padding */
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Match popup shadow */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Match popup font */
+  color: #e0e0e0; /* Match popup text color */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Add subtle border like popup sections */
+}
+
+/* Modal header - Updated styling */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Add separator line */
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px; /* Slightly larger for prominence */
+  font-weight: 700; /* Match popup header weight */
+  color: #ffffff; /* Pure white for header */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-header h3::before {
+  content: '🔖'; /* Add bookmark emoji for visual consistency */
+  font-size: 18px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* Close button - Updated to match dark theme */
+.close-btn {
+  background: rgba(255, 255, 255, 0.1); /* Match popup button style */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px; /* Match popup button radius */
+  font-size: 20px;
+  cursor: pointer;
+  color: #e0e0e0; /* Match popup text color */
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2); /* Match popup button hover */
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+/* Modal body - Updated styling */
+.modal-body {
+  margin-bottom: 20px;
+}
+
+.modal-body label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 600; /* Match popup font weight */
+  font-size: 16px; /* Slightly larger */
+  color: #ffffff; /* Pure white for labels */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-body label::before {
+  content: '✏️'; /* Add edit emoji */
+  font-size: 14px;
+}
+
+/* Textarea styling to match dark theme */
+#bookmark-note {
+  width: 100%;
+  min-height: 100px; /* Slightly larger */
+  resize: vertical;
+  padding: 12px; /* More padding for comfort */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Match popup input borders */
+  border-radius: 6px; /* Match popup border radius */
+  font-size: 14px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Match popup font */
+  background: rgba(0, 0, 0, 0.6); /* Dark background like popup sections */
+  color: #e0e0e0; /* Match popup text color */
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+#bookmark-note:focus {
+  outline: none;
+  border-color: #ffd700; /* Golden focus color to match popup accent */
+  background: rgba(0, 0, 0, 0.8); /* Darker on focus */
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2); /* Golden glow */
+}
+
+#bookmark-note::placeholder {
+  color: rgba(224, 224, 224, 0.5); /* Subtle placeholder text */
+  font-style: italic;
+}
+
+/* Modal footer - Updated styling */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px; /* Match popup button gap */
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1); /* Add separator line */
+}
+
+/* Buttons - Updated to match popup theme */
+.cancel-btn, .save-btn {
+  padding: 12px 20px; /* Match popup button padding */
+  border: none;
+  border-radius: 6px; /* Match popup border radius */
+  cursor: pointer;
+  font-weight: 600; /* Match popup font weight */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Match popup font */
+  font-size: 14px;
+  transition: all 0.3s ease; /* Match popup button transition */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 100px;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1); /* Match popup secondary button */
+  color: #e0e0e0; /* Match popup text color */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2); /* Match popup secondary button hover */
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px); /* Match popup button hover effect */
+}
+
+.cancel-btn::before {
+  content: '✖️'; /* Add cancel icon */
+  font-size: 12px;
+}
+
+.save-btn {
+  background: linear-gradient(45deg, #4caf50, #45a049); /* Match popup primary button */
+  color: white;
+  border: 1px solid transparent;
+}
+
+.save-btn:hover {
+  background: linear-gradient(45deg, #45a049, #388e3c); /* Match popup primary button hover */
+  transform: translateY(-2px); /* Match popup button hover effect */
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4); /* Add glow effect */
+}
+
+.save-btn::before {
+  content: '💾'; /* Add save icon */
+  font-size: 12px;
+}
+
+/* Notification styles - Already properly themed but ensuring consistency */
+.yt-bookmark-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #2196f3;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px; /* Match popup border radius */
+  z-index: 10000;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Match popup font */
+  font-size: 14px;
+  max-width: 300px;
+  word-wrap: break-word;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Add subtle border */
+}
+
+.yt-bookmark-notification.show {
+  opacity: 1;
+}
+
+.yt-bookmark-notification.success {
+  background: linear-gradient(45deg, #4caf50, #45a049); /* Match button gradients */
+}
+
+.yt-bookmark-notification.error {
+  background: linear-gradient(45deg, #ff6b6b, #ee5a52); /* Match button gradients */
+}
+
+.yt-bookmark-notification.warning {
+  background: linear-gradient(45deg, #ff9800, #f57c00); /* Match button gradients */
+}
+
+.yt-bookmark-notification.info {
+  background: linear-gradient(45deg, #2196f3, #1976d2); /* Match button gradients */
+}
+
+/* Responsive Design for Modal */
+@media (max-width: 400px) {
+  .yt-bookmark-modal {
+    margin: 20px;
+    width: calc(100% - 40px);
+    padding: 20px; /* Reduce padding on small screens */
+  }
+  
+  .modal-footer {
+    flex-direction: column; /* Stack buttons vertically on small screens */
+    gap: 8px;
+  }
+  
+  .cancel-btn, .save-btn {
+    width: 100%; /* Full width buttons on small screens */
+    min-width: auto;
+  }
+}
+
+/* Empty State Styles */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.empty-state .icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.empty-state p {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 400px) {
+  html, body {
+    width: 320px;
+  }
+
+  .popup-container {
+    width: 320px;
+    padding: 16px;
+  }
+  
+  .yt-bookmark-modal {
+    margin: 20px;
+    width: calc(100% - 40px);
+  }
+  
+  .bookmark-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .delete-bookmark {
+    align-self: flex-end;
+  }
+  
+  .play-bookmark {
+    align-self: flex-end;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    min-width: auto;
+  }
+  
+  .toggle-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .toggle-text {
+    flex-direction: column; /* Stack title and description vertically on small screens */
+    align-items: flex-start;
+  }
+}
