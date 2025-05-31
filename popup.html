@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>YouTube Bookmark & Settings</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="popup-container">
+    <h1><span class="header-icon">▶️</span> YouTube Bookmarks</h1>
+    
+    <div class="section">
+      <h2><span class="section-icon">📚</span> Bookmarks</h2>
+      <ul id="bookmark-list"></ul>
+    </div>
+    
+    <div class="section">
+      <h2><span class="section-icon">⚙️</span> Video Settings</h2>
+      <div id="settings-display">
+        <div class="settings-grid">
+          <div class="setting-item">
+            <span class="setting-icon">⏩</span>
+            <span class="setting-label">Playback Speed:</span> 
+            <span class="setting-value">Not set</span>
+          </div>
+          <div class="setting-item">
+            <span class="setting-icon">🔊</span>
+            <span class="setting-label">Volume:</span> 
+            <span class="setting-value">Not set</span>
+          </div>
+          <div class="setting-item">
+            <span class="setting-icon">🔇</span>
+            <span class="setting-label">Muted:</span> 
+            <span class="setting-value">Not set</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section toggle-container">
+      <h2><span class="section-icon">⚙️</span> Preferences</h2>
+      <div class="toggle-wrapper">
+        <input type="checkbox" id="prompt-toggle" class="toggle-input">
+        <label class="toggle-label" for="prompt-toggle"></label>
+      </div>
+      <div class="toggle-text">
+        <span class="toggle-title">Settings Prompt</span>
+        <span class="toggle-description">Show confirmation before leaving video</span>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h2><span class="section-icon">⚡</span> Quick Actions</h2>
+      <div class="button-group">
+        <button id="add-bookmark-btn" class="action-btn">
+          <span class="btn-icon">📌</span>
+          <span class="btn-text">Add Bookmark</span>
+        </button>
+        <button id="jump-to-start" class="action-btn">
+          <span class="btn-icon">⏮️</span>
+          <span class="btn-text">Go to Start</span>
+        </button>
+      </div>
+    </div>
+    
+    <footer>
+      <button id="clear-data">
+        <span class="btn-icon">🗑️</span>
+        <span class="btn-text">Clear All Data</span>
+      </button>
+      
+      <div class="extension-info">
+        <div class="info-header">
+          <span class="info-icon">⌨️</span>
+          <span>Keyboard Shortcuts</span>
+        </div>
+        <div class="shortcuts-grid">
+          <div class="shortcut-item">
+            <span>Bookmark timestamp</span>
+            <kbd>Ctrl+B</kbd>
+          </div>
+          <div class="shortcut-item">
+            <span>Toggle settings prompt</span>
+            <kbd>Ctrl+Shift+S</kbd>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
