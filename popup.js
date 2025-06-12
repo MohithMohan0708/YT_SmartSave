@@ -4,38 +4,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initializePopup() {
   try {
-    // Load settings first
     await loadToggleState();
-    
-    // Get current tab info
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
-    
     if (!currentTab || !isYouTubeVideo(currentTab.url)) {
       showEmptyState('not-youtube');
       return;
     }
-    
     const videoId = extractVideoId(currentTab.url);
     if (!videoId) {
       showEmptyState('no-video');
       return;
     }
-    
-    // Load data for current video
     await Promise.all([
       loadBookmarks(videoId, currentTab.id),
       loadSettings(videoId),
       setupEventHandlers(videoId, currentTab.id)
     ]);
-    
   } catch (error) {
     console.error('Failed to initialize popup:', error);
     showEmptyState('error');
   }
 }
 
-// Load toggle state
 async function loadToggleState() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['promptEnabled'], (result) => {
@@ -45,43 +36,31 @@ async function loadToggleState() {
     });
   });
 }
-
-// Check if URL is YouTube video
 function isYouTubeVideo(url) {
   return url && (
-    url.includes('youtube.com/watch') || 
+    url.includes('youtube.com/watch') ||
     url.includes('youtu.be/') ||
     url.includes('youtube.com/embed/')
   );
 }
-
-// Extract video ID from URL
 function extractVideoId(url) {
   const urlObj = new URL(url);
-  
-  // Regular youtube.com/watch?v=
   let videoId = urlObj.searchParams.get('v');
-  
-  // youtu.be/VIDEO_ID
   if (!videoId && urlObj.hostname === 'youtu.be') {
     videoId = urlObj.pathname.slice(1);
   }
-  
-  // youtube.com/embed/VIDEO_ID
   if (!videoId && urlObj.pathname.startsWith('/embed/')) {
     videoId = urlObj.pathname.split('/')[2];
   }
-  
   return videoId;
 }
 
-// Load and display bookmarks
 async function loadBookmarks(videoId, tabId) {
   return new Promise((resolve) => {
     chrome.storage.local.get(['bookmarks'], (result) => {
       const bookmarks = result.bookmarks?.[videoId] || [];
       const bookmarkList = document.getElementById('bookmark-list');
-      
+
       if (bookmarks.length === 0) {
         bookmarkList.innerHTML = `
           <div class="empty-state">
@@ -91,9 +70,7 @@ async function loadBookmarks(videoId, tabId) {
           </div>
         `;
       } else {
-        // Sort bookmarks by time
         bookmarks.sort((a, b) => a.time - b.time);
-        
         bookmarkList.innerHTML = bookmarks.map((bookmark, index) => `
           <li class="bookmark-item" data-time="${bookmark.time}" data-index="${index}">
             <div class="bookmark-content" data-time="${bookmark.time}">
@@ -110,19 +87,13 @@ async function loadBookmarks(videoId, tabId) {
             </div>
           </li>
         `).join('');
-        
-        // Add click handlers for bookmark content (entire area clickable)
         bookmarkList.querySelectorAll('.bookmark-content').forEach((content) => {
           content.onclick = (e) => {
-            // Prevent event if clicking on buttons within bookmark-actions
             if (e.target.closest('.bookmark-actions')) return;
-            
             const time = parseFloat(content.dataset.time);
             jumpToTime(tabId, time);
           };
         });
-        
-        // Add specific click handlers for play buttons
         bookmarkList.querySelectorAll('.play-bookmark').forEach((btn) => {
           btn.onclick = (e) => {
             e.stopPropagation();
@@ -130,8 +101,6 @@ async function loadBookmarks(videoId, tabId) {
             jumpToTime(tabId, time);
           };
         });
-        
-        // Add delete handlers
         bookmarkList.querySelectorAll('.delete-bookmark').forEach((btn) => {
           btn.onclick = (e) => {
             e.stopPropagation();
@@ -144,11 +113,7 @@ async function loadBookmarks(videoId, tabId) {
     });
   });
 }
-// Enhanced jump to time function with better error handling
 function jumpToTime(tabId, time) {
-  // Close popup after clicking (optional - remove if you want popup to stay open)
-  // window.close();
-  
   chrome.scripting.executeScript({
     target: { tabId },
     func: (timestamp) => {
@@ -157,27 +122,18 @@ function jumpToTime(tabId, time) {
         console.error('No video element found');
         return { success: false, error: 'No video found' };
       }
-      
       try {
-        // Set the time first
         video.currentTime = timestamp;
-        
-        // Wait a bit and then play if video was playing or paused
         setTimeout(() => {
           if (video.paused) {
             video.play().catch(e => console.log('Auto-play prevented:', e));
           }
         }, 100);
-        
-        // Show enhanced notification
         const minutes = Math.floor(timestamp / 60);
         const seconds = Math.floor(timestamp % 60);
         const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        // Remove any existing notifications first
         const existingNotifications = document.querySelectorAll('.yt-bookmark-jump-notification');
         existingNotifications.forEach(n => n.remove());
-        
         const notification = document.createElement('div');
         notification.className = 'yt-bookmark-jump-notification';
         notification.innerHTML = `
@@ -186,8 +142,6 @@ function jumpToTime(tabId, time) {
             <span class="notification-text">Jumped to ${timeStr}</span>
           </div>
         `;
-        
-        // Enhanced notification styles
         notification.style.cssText = `
           position: fixed;
           top: 80px;
@@ -204,15 +158,10 @@ function jumpToTime(tabId, time) {
           border: 1px solid rgba(255, 255, 255, 0.2);
           backdrop-filter: blur(10px);
         `;
-        
         document.body.appendChild(notification);
-        
-        // Animate in
         setTimeout(() => {
           notification.style.transform = 'translateX(0)';
         }, 50);
-        
-        // Remove after delay with animation
         setTimeout(() => {
           notification.style.transform = 'translateX(300px)';
           notification.style.opacity = '0';
@@ -222,9 +171,8 @@ function jumpToTime(tabId, time) {
             }
           }, 300);
         }, 2500);
-        
         return { success: true, time: timestamp };
-        
+
       } catch (error) {
         console.error('Error jumping to time:', error);
         return { success: false, error: error.message };
@@ -243,11 +191,9 @@ function jumpToTime(tabId, time) {
     showNotification('Failed to jump to timestamp. Make sure the video is loaded.', 'error');
   });
 }
-
-// Delete bookmark
 function deleteBookmark(videoId, index) {
   if (!confirm('Delete this bookmark?')) return;
-  
+
   chrome.storage.local.get(['bookmarks'], (result) => {
     const bookmarks = result.bookmarks || {};
     if (bookmarks[videoId]) {
@@ -256,7 +202,6 @@ function deleteBookmark(videoId, index) {
         delete bookmarks[videoId];
       }
       chrome.storage.local.set({ bookmarks }, () => {
-        // Get current tab to reload bookmarks
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           loadBookmarks(videoId, tabs[0]?.id);
         });
@@ -265,17 +210,16 @@ function deleteBookmark(videoId, index) {
   });
 }
 
-// Load and display settings
 async function loadSettings(videoId) {
   return new Promise((resolve) => {
     chrome.storage.local.get(['videoSettings'], (result) => {
       const settings = result.videoSettings?.[videoId] || {};
       const settingsDisplay = document.getElementById('settings-display');
-      
+
       const playbackRate = settings.playbackRate ? `${settings.playbackRate}x` : 'Default (1x)';
       const volume = typeof settings.volume === 'number' ? `${Math.round(settings.volume * 100)}%` : 'Default (100%)';
       const muted = typeof settings.muted === 'boolean' ? (settings.muted ? 'Yes' : 'No') : 'Default (No)';
-      
+
       settingsDisplay.innerHTML = `
         <div class="settings-grid">
           <div class="setting-item">
@@ -298,15 +242,12 @@ async function loadSettings(videoId) {
           ` : ''}
         </div>
       `;
-      
       resolve();
     });
   });
 }
 
-// Setup event handlers
 async function setupEventHandlers(videoId, tabId) {
-  // Toggle state handler
   document.getElementById('prompt-toggle').addEventListener('change', (e) => {
     const promptEnabled = e.target.checked;
     chrome.storage.local.set({ promptEnabled }, () => {
@@ -314,35 +255,28 @@ async function setupEventHandlers(videoId, tabId) {
       showNotification(promptEnabled ? 'Settings prompt enabled' : 'Settings prompt disabled');
     });
   });
-  
-  // Add bookmark button handler
   const addBookmarkBtn = document.getElementById('add-bookmark-btn');
   if (addBookmarkBtn) {
     addBookmarkBtn.onclick = () => {
       chrome.scripting.executeScript({
         target: { tabId },
         func: () => {
-          // Trigger the bookmark function
           if (typeof saveBookmark === 'function') {
             saveBookmark();
           } else {
-            // Fallback: dispatch a custom event
             document.dispatchEvent(new CustomEvent('ytBookmarkShortcut'));
           }
         }
       });
     };
   }
-  
-  // Jump to start button handler
+
   const jumpToStartBtn = document.getElementById('jump-to-start');
   if (jumpToStartBtn) {
     jumpToStartBtn.onclick = () => {
       jumpToTime(tabId, 0);
     };
   }
-  
-  // Clear data handler
   document.getElementById('clear-data').onclick = () => {
     if (confirm('This will delete ALL bookmarks and settings for ALL videos. Are you sure?')) {
       chrome.storage.local.clear(() => {
@@ -351,12 +285,9 @@ async function setupEventHandlers(videoId, tabId) {
       });
     }
   };
-  
-  // Add export/import functionality
   addAdvancedFeatures(videoId);
 }
 
-// Add advanced features
 function addAdvancedFeatures(videoId) {
   const footer = document.querySelector('footer');
   const advancedSection = document.createElement('div');
@@ -375,21 +306,15 @@ function addAdvancedFeatures(videoId) {
       <input type="file" id="import-file" accept=".json" style="display: none;">
     </div>
   `;
-  
+
   footer.insertBefore(advancedSection, document.getElementById('clear-data'));
-  
-  // Export functionality
   document.getElementById('export-data').onclick = exportData;
-  
-  // Import functionality
   document.getElementById('import-data').onclick = () => {
     document.getElementById('import-file').click();
   };
-  
+
   document.getElementById('import-file').onchange = importData;
 }
-
-// Export data
 function exportData() {
   chrome.storage.local.get(null, (data) => {
     const exportData = {
@@ -399,36 +324,29 @@ function exportData() {
       exportDate: new Date().toISOString(),
       version: '2.0'
     };
-    
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
       type: 'application/json'
     });
-    
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `youtube-bookmarks-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
-    
+
     URL.revokeObjectURL(url);
     showNotification('Data exported successfully');
   });
 }
-
-// Import data
 function importData(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const importedData = JSON.parse(e.target.result);
-      
       if (!importedData.bookmarks && !importedData.videoSettings) {
         throw new Error('Invalid file format');
       }
-      
       if (confirm('This will merge imported data with existing data. Continue?')) {
         chrome.storage.local.get(null, (existingData) => {
           const mergedData = {
@@ -436,7 +354,6 @@ function importData(event) {
             videoSettings: { ...existingData.videoSettings, ...importedData.videoSettings },
             promptEnabled: importedData.promptEnabled !== undefined ? importedData.promptEnabled : existingData.promptEnabled
           };
-          
           chrome.storage.local.set(mergedData, () => {
             showNotification('Data imported successfully');
             setTimeout(() => window.location.reload(), 1000);
@@ -447,15 +364,12 @@ function importData(event) {
       showNotification('Error importing data: Invalid file format', 'error');
     }
   };
-  
+
   reader.readAsText(file);
 }
-
-// Show empty state
 function showEmptyState(type) {
   const container = document.querySelector('.popup-container');
   let message, icon;
-  
   switch (type) {
     case 'not-youtube':
       icon = '📺';
@@ -479,7 +393,6 @@ function showEmptyState(type) {
       };
       break;
   }
-  
   container.innerHTML = `
     <div class="empty-state">
       <div class="icon">${icon}</div>
@@ -488,19 +401,15 @@ function showEmptyState(type) {
     </div>
   `;
 }
-
-// Enhanced notification function
 function showNotification(message, type = 'success') {
   const notification = document.createElement('div');
   notification.className = `popup-notification ${type}`;
   notification.textContent = message;
-  
   const colors = {
     success: 'linear-gradient(135deg, #4caf50, #45a049)',
     error: 'linear-gradient(135deg, #f44336, #d32f2f)',
     info: 'linear-gradient(135deg, #2196f3, #1976d2)'
   };
-  
   notification.style.cssText = `
     position: fixed;
     top: 20px;
@@ -515,13 +424,11 @@ function showNotification(message, type = 'success') {
     transform: translateX(300px);
     transition: all 0.3s ease;
   `;
-  
+
   document.body.appendChild(notification);
-  
   setTimeout(() => {
     notification.style.transform = 'translateX(0)';
   }, 50);
-  
   setTimeout(() => {
     notification.style.transform = 'translateX(300px)';
     setTimeout(() => {
@@ -531,8 +438,6 @@ function showNotification(message, type = 'success') {
     }, 300);
   }, 3000);
 }
-
-// Escape HTML to prevent XSS
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;

@@ -9,37 +9,31 @@ let lastAPICheck = 0;
 let reconnectAttempts = 0;
 let maxReconnectAttempts = 3;
 
-// Enhanced Chrome extension availability check with caching
 function checkChromeExtensionAvailability() {
   const now = Date.now();
-  // Cache the check for 1 second to avoid excessive checking
   if (now - lastAPICheck < 1000) {
     return chromeAPIsAvailable;
   }
   lastAPICheck = now;
 
   try {
-    // Check if basic chrome object exists
     if (typeof chrome === 'undefined' || !chrome) {
       return false;
     }
-    
-    // Check if runtime exists and is not invalidated
+
     if (!chrome.runtime || !chrome.runtime.id) {
       return false;
     }
-    
-    // Check if storage exists
+
     if (!chrome.storage || !chrome.storage.local) {
       return false;
     }
-    
-    // Try to access a property that would fail if context is invalid
+
     const manifest = chrome.runtime.getManifest();
     if (!manifest) {
       return false;
     }
-    
+
     return true;
   } catch (error) {
     console.warn('Chrome extension APIs not available:', error.message);
@@ -47,29 +41,25 @@ function checkChromeExtensionAvailability() {
   }
 }
 
-// Initialize Chrome API availability check
 function initializeChromeAPICheck() {
   chromeAPIsAvailable = checkChromeExtensionAvailability();
   extensionContextValid = chromeAPIsAvailable;
-  
+
   if (!chromeAPIsAvailable) {
     console.log('Chrome extension APIs are not available - running in limited mode');
   } else {
     console.log('Chrome extension APIs are available and ready');
-    reconnectAttempts = 0; // Reset reconnection attempts on successful connection
+    reconnectAttempts = 0;
   }
 }
 
-// Enhanced safe wrapper for chrome.storage operations
 function safeStorageOperation(operation, fallbackCallback) {
-  // Early exit if we know APIs aren't available
   if (!extensionContextValid) {
     console.log('Extension context invalid - skipping storage operation');
     if (fallbackCallback) fallbackCallback();
     return;
   }
-  
-  // Check availability with fresh check
+
   const available = checkChromeExtensionAvailability();
   if (!available) {
     chromeAPIsAvailable = false;
@@ -78,18 +68,15 @@ function safeStorageOperation(operation, fallbackCallback) {
     if (fallbackCallback) fallbackCallback();
     return;
   }
-  
-  // Wrap the entire operation in a comprehensive try-catch
+
   try {
-    // Add a timeout wrapper to prevent hanging operations
     const timeoutId = setTimeout(() => {
       console.warn('Storage operation timeout - context may be invalid');
       chromeAPIsAvailable = false;
       extensionContextValid = false;
       if (fallbackCallback) fallbackCallback();
     }, 5000);
-    
-    // Create a wrapper that clears the timeout
+
     const wrappedOperation = () => {
       try {
         clearTimeout(timeoutId);
@@ -99,18 +86,16 @@ function safeStorageOperation(operation, fallbackCallback) {
         throw innerError;
       }
     };
-    
+
     wrappedOperation();
   } catch (error) {
     console.warn('Storage operation failed:', error.message);
-    
-    // Check if this is a context invalidation error
+
     if (error.message && error.message.includes('Extension context invalidated')) {
       console.log('Detected extension context invalidation');
       chromeAPIsAvailable = false;
       extensionContextValid = false;
-      
-      // Attempt to reconnect if we haven't exceeded max attempts
+
       if (reconnectAttempts < maxReconnectAttempts) {
         reconnectAttempts++;
         console.log(`Attempting to reconnect (attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
@@ -119,26 +104,24 @@ function safeStorageOperation(operation, fallbackCallback) {
           if (chromeAPIsAvailable) {
             console.log('Successfully reconnected to Chrome APIs');
           }
-        }, 1000 * reconnectAttempts); // Exponential backoff
+        }, 1000 * reconnectAttempts);
       } else {
         console.log('Max reconnection attempts exceeded - staying in fallback mode');
         showNotification('Extension connection lost - some features unavailable', 'warning');
       }
     }
-    
+
     if (fallbackCallback) fallbackCallback();
   }
 }
 
-// Enhanced initialization with better error handling and retry logic
 function initializeExtension() {
   if (isInitialized) return;
-  
+
   console.log('Initializing YouTube Bookmark Extension...');
-  
-  // Initialize Chrome API availability
+
   initializeChromeAPICheck();
-  
+
   videoElement = document.querySelector('video');
   if (!videoElement) {
     console.log('Video element not found, retrying in 500ms...');
@@ -146,16 +129,13 @@ function initializeExtension() {
     return;
   }
 
-  // Extract video ID from multiple possible URL formats
   videoId = extractVideoId();
   if (!videoId) {
     console.warn('Could not extract video ID from URL:', window.location.href);
-    // Don't return here - still set up the extension for bookmarking functionality
   }
 
   console.log('YouTube Bookmark Extension initialized for video:', videoId || 'unknown');
-  
-  // Store original settings safely
+
   try {
     originalSettings = {
       playbackRate: videoElement.playbackRate || 1,
@@ -171,29 +151,25 @@ function initializeExtension() {
   setupExtension();
 }
 
-// Better video ID extraction with more robust URL handling
 function extractVideoId() {
   try {
     const urlParams = new URLSearchParams(window.location.search);
     let id = urlParams.get('v');
-    
+
     if (!id) {
-      // Handle embedded videos and other YouTube URL formats
       const pathMatch = window.location.pathname.match(/\/embed\/([^/?]+)/);
       if (pathMatch) id = pathMatch[1];
     }
-    
+
     if (!id) {
-      // Handle youtu.be URLs
       const shortUrlMatch = window.location.href.match(/youtu\.be\/([^/?]+)/);
       if (shortUrlMatch) id = shortUrlMatch[1];
     }
-    
-    // Clean the ID (remove any query parameters that might have been included)
+
     if (id) {
       id = id.split('&')[0].split('?')[0];
     }
-    
+
     return id;
   } catch (error) {
     console.warn('Error extracting video ID:', error.message);
@@ -201,14 +177,13 @@ function extractVideoId() {
   }
 }
 
-// Main setup function with better error isolation
 function setupExtension() {
   try {
     addBookmarkButton();
   } catch (error) {
     console.error('Error adding bookmark button:', error.message);
   }
-  
+
   if (chromeAPIsAvailable && videoId) {
     try {
       loadAndApplySettings();
@@ -216,13 +191,13 @@ function setupExtension() {
       console.error('Error loading settings:', error.message);
     }
   }
-  
+
   try {
     setupEventListeners();
   } catch (error) {
     console.error('Error setting up event listeners:', error.message);
   }
-  
+
   if (chromeAPIsAvailable && videoId) {
     try {
       startSettingsMonitoring();
@@ -230,8 +205,7 @@ function setupExtension() {
       console.error('Error starting settings monitoring:', error.message);
     }
   }
-  
-  // Handle YouTube's SPA navigation with better error handling
+
   try {
     let lastUrl = location.href;
     const observer = new MutationObserver(() => {
@@ -251,26 +225,22 @@ function setupExtension() {
   }
 }
 
-// Enhanced page change handling
 function handlePageChange() {
   try {
     const newVideoId = extractVideoId();
     if (newVideoId && newVideoId !== videoId) {
       console.log('Navigation detected, switching from', videoId, 'to', newVideoId);
-      
-      // Save current settings before switching
+
       if (chromeAPIsAvailable && videoId) {
         saveCurrentSettings();
       }
-      
-      // Reset state
+
       isInitialized = false;
       if (settingsCheckInterval) {
         clearInterval(settingsCheckInterval);
         settingsCheckInterval = null;
       }
-      
-      // Reinitialize after a delay
+
       setTimeout(initializeExtension, 1000);
     }
   } catch (error) {
@@ -278,10 +248,8 @@ function handlePageChange() {
   }
 }
 
-// Enhanced bookmark button with better error handling and positioning
 function addBookmarkButton() {
   try {
-    // Remove existing button first
     const existingBtn = document.getElementById('yt-bookmark-btn');
     if (existingBtn) {
       existingBtn.remove();
@@ -299,31 +267,28 @@ function addBookmarkButton() {
     button.className = 'ytp-button yt-bookmark-btn';
     button.title = 'Bookmark current timestamp (Ctrl+B)';
     button.setAttribute('data-title-no-tooltip', 'Bookmark');
-    
-    // Use YouTube's native button styling
+
     button.innerHTML = `
       <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
         <path d="M18 4l4 4h10v24H4V8h10l4-4z" fill="currentColor" opacity="0.8"/>
         <path d="M8 12v16l8-4 8 4V12H8z" fill="currentColor"/>
       </svg>
     `;
-    
+
     button.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
       saveBookmark();
     };
 
-    // Insert the button in the right position
     rightControls.appendChild(button);
-    
+
     console.log('Bookmark button added successfully');
   } catch (error) {
     console.error('Error adding bookmark button:', error.message);
   }
 }
 
-// Enhanced bookmark saving with better error handling
 function saveBookmark() {
   try {
     if (!extensionContextValid) {
@@ -343,10 +308,9 @@ function saveBookmark() {
 
     const time = Math.floor(videoElement.currentTime);
     const formattedTime = formatTime(time);
-    
+
     console.log('Creating bookmark at time:', time, 'formatted:', formattedTime);
-    
-    // Create a more user-friendly prompt
+
     const noteModal = createNoteModal(formattedTime);
     document.body.appendChild(noteModal);
   } catch (error) {
@@ -355,17 +319,16 @@ function saveBookmark() {
   }
 }
 
-// Better time formatting with error handling
 function formatTime(seconds) {
   try {
     if (isNaN(seconds) || seconds < 0) {
       return '0:00';
     }
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -376,11 +339,10 @@ function formatTime(seconds) {
   }
 }
 
-// Enhanced note modal creation
 function createNoteModal(formattedTime) {
   const overlay = document.createElement('div');
   overlay.className = 'yt-bookmark-overlay';
-  
+
   const modal = document.createElement('div');
   modal.className = 'yt-bookmark-modal';
   modal.innerHTML = `
@@ -397,15 +359,14 @@ function createNoteModal(formattedTime) {
       <button class="save-btn" type="button">Save Bookmark</button>
     </div>
   `;
-  
+
   overlay.appendChild(modal);
-  
-  // Event handlers with better error handling
+
   const closeBtn = modal.querySelector('.close-btn');
   const cancelBtn = modal.querySelector('.cancel-btn');
   const saveBtn = modal.querySelector('.save-btn');
   const noteInput = modal.querySelector('#bookmark-note');
-  
+
   const closeModal = () => {
     try {
       if (document.body.contains(overlay)) {
@@ -415,7 +376,7 @@ function createNoteModal(formattedTime) {
       console.warn('Error closing modal:', error.message);
     }
   };
-  
+
   closeBtn.onclick = closeModal;
   cancelBtn.onclick = closeModal;
   overlay.onclick = (e) => {
@@ -423,7 +384,7 @@ function createNoteModal(formattedTime) {
       closeModal();
     }
   };
-  
+
   saveBtn.onclick = () => {
     try {
       const note = noteInput.value.trim();
@@ -434,15 +395,14 @@ function createNoteModal(formattedTime) {
       showNotification('Error saving bookmark', 'error');
     }
   };
-  
-  // Enhanced keyboard handling
+
   try {
     setTimeout(() => {
       if (noteInput && typeof noteInput.focus === 'function') {
         noteInput.focus();
       }
     }, 100);
-    
+
     noteInput.onkeydown = (e) => {
       try {
         if (e.key === 'Enter' && e.ctrlKey) {
@@ -459,11 +419,10 @@ function createNoteModal(formattedTime) {
   } catch (error) {
     console.warn('Error setting up modal keyboard handlers:', error.message);
   }
-  
+
   return overlay;
 }
 
-// Enhanced bookmark storage with better error handling
 function saveBookmarkToStorage(time, formattedTime, note) {
   if (!videoId) {
     showNotification('Error: Video ID not available', 'error');
@@ -473,7 +432,6 @@ function saveBookmarkToStorage(time, formattedTime, note) {
   safeStorageOperation(() => {
     try {
       chrome.storage.local.get(['bookmarks'], (result) => {
-        // Check for chrome.runtime.lastError immediately
         if (chrome.runtime.lastError) {
           console.warn('Storage error:', chrome.runtime.lastError.message);
           showNotification('Error saving bookmark - storage unavailable', 'error');
@@ -481,13 +439,13 @@ function saveBookmarkToStorage(time, formattedTime, note) {
           chromeAPIsAvailable = false;
           return;
         }
-        
+
         try {
           const bookmarks = result.bookmarks || {};
           if (!bookmarks[videoId]) {
             bookmarks[videoId] = [];
           }
-          
+
           const bookmark = {
             time: Math.floor(time),
             formattedTime,
@@ -495,9 +453,9 @@ function saveBookmarkToStorage(time, formattedTime, note) {
             timestamp: Date.now(),
             videoTitle: getVideoTitle()
           };
-          
+
           bookmarks[videoId].push(bookmark);
-          
+
           chrome.storage.local.set({ bookmarks }, () => {
             if (chrome.runtime.lastError) {
               console.warn('Storage error on set:', chrome.runtime.lastError.message);
@@ -506,7 +464,7 @@ function saveBookmarkToStorage(time, formattedTime, note) {
               chromeAPIsAvailable = false;
               return;
             }
-            
+
             console.log('Bookmark saved successfully:', bookmark);
             showNotification(`Bookmark saved at ${formattedTime}`, 'success');
           });
@@ -517,15 +475,13 @@ function saveBookmarkToStorage(time, formattedTime, note) {
       });
     } catch (storageError) {
       console.error('Error accessing storage:', storageError.message);
-      throw storageError; // Re-throw to be caught by safeStorageOperation
+      throw storageError;
     }
   }, () => {
-    // Fallback: try to save to a temporary array or show error
     showNotification('Could not save bookmark - storage unavailable', 'warning');
   });
 }
 
-// Enhanced video title extraction
 function getVideoTitle() {
   try {
     const selectors = [
@@ -535,7 +491,7 @@ function getVideoTitle() {
       '.ytp-title-link',
       'title'
     ];
-    
+
     for (const selector of selectors) {
       const element = document.querySelector(selector);
       if (element && element.textContent) {
@@ -545,8 +501,7 @@ function getVideoTitle() {
         }
       }
     }
-    
-    // Fallback to URL-based title extraction
+
     const urlTitle = document.title.replace(' - YouTube', '');
     return urlTitle || 'Unknown Video';
   } catch (error) {
@@ -555,7 +510,6 @@ function getVideoTitle() {
   }
 }
 
-// Enhanced settings loading with better error handling
 function loadAndApplySettings() {
   if (!videoId || !videoElement) {
     console.log('Cannot load settings: missing video ID or element');
@@ -571,37 +525,36 @@ function loadAndApplySettings() {
           chromeAPIsAvailable = false;
           return;
         }
-        
+
         try {
           const settings = result.videoSettings || {};
           const videoSettings = settings[videoId];
-          
+
           if (videoSettings && videoElement) {
             console.log('Applying saved settings:', videoSettings);
-            
-            // Apply settings with delays and error handling
+
             setTimeout(() => {
               try {
-                if (videoSettings.playbackRate && 
-                    typeof videoSettings.playbackRate === 'number' && 
-                    videoSettings.playbackRate > 0 && 
-                    videoSettings.playbackRate <= 16) {
+                if (videoSettings.playbackRate &&
+                  typeof videoSettings.playbackRate === 'number' &&
+                  videoSettings.playbackRate > 0 &&
+                  videoSettings.playbackRate <= 16) {
                   videoElement.playbackRate = videoSettings.playbackRate;
                   console.log('Applied playback rate:', videoSettings.playbackRate);
                 }
-                
-                if (typeof videoSettings.volume === 'number' && 
-                    videoSettings.volume >= 0 && 
-                    videoSettings.volume <= 1) {
+
+                if (typeof videoSettings.volume === 'number' &&
+                  videoSettings.volume >= 0 &&
+                  videoSettings.volume <= 1) {
                   videoElement.volume = videoSettings.volume;
                   console.log('Applied volume:', videoSettings.volume);
                 }
-                
+
                 if (typeof videoSettings.muted === 'boolean') {
                   videoElement.muted = videoSettings.muted;
                   console.log('Applied muted state:', videoSettings.muted);
                 }
-                
+
                 showNotification('Previous settings restored', 'info');
               } catch (applyError) {
                 console.warn('Error applying video settings:', applyError.message);
@@ -619,7 +572,6 @@ function loadAndApplySettings() {
   });
 }
 
-// Enhanced settings monitoring with better error handling
 function startSettingsMonitoring() {
   if (settingsCheckInterval) {
     clearInterval(settingsCheckInterval);
@@ -628,27 +580,24 @@ function startSettingsMonitoring() {
   settingsCheckInterval = setInterval(() => {
     try {
       if (!videoElement || !videoId) return;
-      
-      // Skip monitoring if Chrome APIs are unavailable
+
       if (!extensionContextValid) {
         return;
       }
-      
+
       const currentSettings = {
         playbackRate: videoElement.playbackRate || 1,
         volume: videoElement.volume || 1,
         muted: videoElement.muted || false
       };
-      
-      // Check if settings have changed significantly
-      const hasChanged = 
+
+      const hasChanged =
         Math.abs(currentSettings.playbackRate - originalSettings.playbackRate) > 0.01 ||
         Math.abs(currentSettings.volume - originalSettings.volume) > 0.01 ||
         currentSettings.muted !== originalSettings.muted;
-      
+
       if (hasChanged) {
         console.log('Settings changed:', originalSettings, '->', currentSettings);
-        // Update original settings to current ones
         originalSettings = { ...currentSettings };
       }
     } catch (error) {
@@ -657,19 +606,17 @@ function startSettingsMonitoring() {
   }, 2000);
 }
 
-// Enhanced current settings saving
 function saveCurrentSettings() {
   if (!videoElement || !videoId) {
     console.log('Cannot save settings: missing video element or ID');
     return;
   }
-  
-  // Skip if Chrome APIs are unavailable
+
   if (!extensionContextValid) {
     console.log('Skipping settings save: extension context invalid');
     return;
   }
-  
+
   try {
     const currentSettings = {
       playbackRate: videoElement.playbackRate || 1,
@@ -677,9 +624,9 @@ function saveCurrentSettings() {
       muted: videoElement.muted || false,
       timestamp: Date.now()
     };
-    
+
     console.log('Saving current settings:', currentSettings);
-    
+
     safeStorageOperation(() => {
       try {
         chrome.storage.local.get(['videoSettings'], (result) => {
@@ -689,11 +636,11 @@ function saveCurrentSettings() {
             chromeAPIsAvailable = false;
             return;
           }
-          
+
           try {
             const settings = result.videoSettings || {};
             settings[videoId] = currentSettings;
-            
+
             chrome.storage.local.set({ videoSettings: settings }, () => {
               if (chrome.runtime.lastError) {
                 console.warn('Storage error on settings set:', chrome.runtime.lastError.message);
@@ -717,10 +664,8 @@ function saveCurrentSettings() {
   }
 }
 
-// Enhanced event listeners setup
 function setupEventListeners() {
   try {
-    // Keyboard shortcuts with better error handling
     document.addEventListener('keydown', (e) => {
       try {
         if (e.ctrlKey && e.key.toLowerCase() === 'b' && !e.shiftKey && !e.altKey) {
@@ -731,8 +676,7 @@ function setupEventListeners() {
         console.warn('Error in keyboard shortcut handler:', error.message);
       }
     });
-    
-    // Enhanced beforeunload handler
+
     window.addEventListener('beforeunload', () => {
       try {
         if (extensionContextValid && videoId) {
@@ -742,15 +686,14 @@ function setupEventListeners() {
         console.warn('Error saving settings on beforeunload:', error.message);
       }
     });
-    
-    // Enhanced video event handlers
+
     if (videoElement) {
       let pauseTimeout;
-      
+
       videoElement.addEventListener('pause', () => {
         try {
           if (!extensionContextValid) return;
-          
+
           pauseTimeout = setTimeout(() => {
             try {
               if (extensionContextValid) {
@@ -764,7 +707,7 @@ function setupEventListeners() {
           console.warn('Error in pause handler:', error.message);
         }
       });
-      
+
       videoElement.addEventListener('play', () => {
         try {
           if (pauseTimeout) {
@@ -774,8 +717,7 @@ function setupEventListeners() {
           console.warn('Error in play handler:', error.message);
         }
       });
-      
-      // Enhanced change monitoring
+
       videoElement.addEventListener('ratechange', () => {
         try {
           console.log('Playback rate changed to:', videoElement.playbackRate);
@@ -783,7 +725,7 @@ function setupEventListeners() {
           console.warn('Error in ratechange handler:', error.message);
         }
       });
-      
+
       videoElement.addEventListener('volumechange', () => {
         try {
           console.log('Volume changed to:', videoElement.volume, 'Muted:', videoElement.muted);
@@ -797,10 +739,8 @@ function setupEventListeners() {
   }
 }
 
-// Enhanced notification system
 function showNotification(message, type = 'info') {
   try {
-    // Remove any existing notifications first
     const existingNotifications = document.querySelectorAll('.yt-bookmark-notification');
     existingNotifications.forEach(notif => {
       try {
@@ -811,12 +751,11 @@ function showNotification(message, type = 'info') {
         console.warn('Error removing existing notification:', error.message);
       }
     });
-    
+
     const notification = document.createElement('div');
     notification.className = `yt-bookmark-notification ${type}`;
     notification.textContent = message;
-    
-    // Enhanced styles
+
     notification.style.cssText = `
       position: fixed;
       top: 20px;
@@ -835,15 +774,13 @@ function showNotification(message, type = 'info') {
       transform: translateX(100%);
       transition: transform 0.3s ease;
     `;
-    
+
     document.body.appendChild(notification);
-    
-    // Animate in
+
     setTimeout(() => {
       notification.style.transform = 'translateX(0)';
     }, 100);
-    
-    // Remove after delay
+
     setTimeout(() => {
       notification.style.transform = 'translateX(100%)';
       setTimeout(() => {
@@ -858,7 +795,6 @@ function showNotification(message, type = 'info') {
     }, 3000);
   } catch (error) {
     console.warn('Error showing notification:', error.message);
-    // Fallback to console log
     console.log(`Notification (${type}): ${message}`);
   }
 }
@@ -872,82 +808,70 @@ function getNotificationColor(type) {
   }
 }
 
-// Comprehensive cleanup function
 function cleanup() {
   console.log('Cleaning up extension...');
-  
+
   try {
-    // Mark APIs as unavailable
     chromeAPIsAvailable = false;
     extensionContextValid = false;
-    
-    // Clear intervals
+
     if (settingsCheckInterval) {
       clearInterval(settingsCheckInterval);
       settingsCheckInterval = null;
     }
-    
-    // Remove bookmark button
+
     const existingBtn = document.getElementById('yt-bookmark-btn');
     if (existingBtn && existingBtn.parentNode) {
       existingBtn.parentNode.removeChild(existingBtn);
     }
-    
-    // Remove any open modals
+
     const modals = document.querySelectorAll('.yt-bookmark-overlay');
     modals.forEach(modal => {
       if (modal.parentNode) {
         modal.parentNode.removeChild(modal);
       }
     });
-    
-    // Remove notifications
+
     const notifications = document.querySelectorAll('.yt-bookmark-notification');
     notifications.forEach(notif => {
       if (notif.parentNode) {
         notif.parentNode.removeChild(notif);
       }
     });
-    
-    // Reset state
+
     isInitialized = false;
     videoElement = null;
     videoId = null;
     originalSettings = {};
-    
+
     console.log('Extension cleanup completed');
   } catch (error) {
     console.warn('Error during cleanup:', error.message);
   }
 }
-// Enhanced error handling for window events
+
 function setupWindowEventHandlers() {
-  // Handle page unload
   window.addEventListener('beforeunload', cleanup);
-  
-  // Handle potential extension reload detection
+
   window.addEventListener('error', (event) => {
     if (event.message && event.message.includes('Extension context invalidated')) {
       console.log('Detected extension context invalidation via error event');
       cleanup();
     }
   });
-  
-  // Handle unhandled promise rejections that might be related to extension context
+
   window.addEventListener('unhandledrejection', (event) => {
-    if (event.reason && event.reason.message && 
-        event.reason.message.includes('Extension context invalidated')) {
+    if (event.reason && event.reason.message &&
+      event.reason.message.includes('Extension context invalidated')) {
       console.log('Detected extension context invalidation via promise rejection');
       cleanup();
-      event.preventDefault(); // Prevent the error from being logged
+      event.preventDefault();
     }
   });
 }
 
-// Initialize window event handlers
 setupWindowEventHandlers();
 
-// Start the extension with complete error isolation
 try {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeExtension);

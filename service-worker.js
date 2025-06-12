@@ -1,16 +1,11 @@
-// Background service worker for YouTube Bookmark & Settings Pro
 console.log('Service worker registered successfully at:', new Date().toISOString());
-
-// Helper to check if URL is a YouTube video
 function isYouTubeVideo(url) {
   return url && (
-    url.includes('youtube.com/watch') || 
+    url.includes('youtube.com/watch') ||
     url.includes('youtu.be/') ||
     url.includes('youtube.com/embed/')
   );
 }
-
-// Show notification on tab
 async function showTabNotification(tab, message, type = 'info') {
   try {
     if (!tab || !tab.id || tab.discarded) {
@@ -39,7 +34,7 @@ async function showTabNotification(tab, message, type = 'info') {
           max-width: 300px;
           word-wrap: break-word;
         `;
-        
+
         function getNotificationColor(type) {
           switch (type) {
             case 'success': return '#4caf50';
@@ -48,7 +43,7 @@ async function showTabNotification(tab, message, type = 'info') {
             default: return '#2196f3';
           }
         }
-        
+
         document.body.appendChild(notification);
         setTimeout(() => {
           if (notification.parentNode) {
@@ -69,12 +64,10 @@ async function showTabNotification(tab, message, type = 'info') {
     console.error('Failed to show notification on tab', tab?.id, ':', error.message);
   }
 }
-
-// Execute bookmark command
 async function executeBookmarkCommand() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
+
     if (!tab || !tab.id || tab.discarded) {
       console.warn('Cannot execute bookmark command: No active tab or tab is discarded');
       return;
@@ -99,12 +92,10 @@ async function executeBookmarkCommand() {
     console.error('Failed to execute bookmark command:', error.message);
   }
 }
-
-// Show bookmarks command
 async function showBookmarksCommand() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
+
     if (!tab || !tab.id || tab.discarded) {
       console.warn('Cannot show bookmarks: No active tab or tab is discarded');
       return;
@@ -129,21 +120,19 @@ async function showBookmarksCommand() {
     console.error('Failed to show bookmarks:', error.message);
   }
 }
-
-// Toggle settings prompt
 async function toggleSettingsPrompt() {
   try {
     const result = await chrome.storage.local.get(['promptEnabled']);
     const newState = !result.promptEnabled;
-    
+
     await chrome.storage.local.set({ promptEnabled: newState });
     console.log(`Settings prompt toggled to ${newState}`);
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab) {
       await showTabNotification(
-        tab, 
-        `Settings prompt ${newState ? 'enabled' : 'disabled'}`, 
+        tab,
+        `Settings prompt ${newState ? 'enabled' : 'disabled'}`,
         newState ? 'success' : 'info'
       );
     }
@@ -151,8 +140,6 @@ async function toggleSettingsPrompt() {
     console.error('Failed to toggle settings prompt:', error.message);
   }
 }
-
-// Handle keyboard commands
 chrome.commands.onCommand.addListener((command) => {
   console.log(`Command received: ${command}`);
   switch (command) {
@@ -169,40 +156,31 @@ chrome.commands.onCommand.addListener((command) => {
       console.warn(`Unknown command: ${command}`);
   }
 });
-
-// Handle tab updates to inject content script on YouTube videos
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  // Only act on YouTube videos when the page is complete
   if (changeInfo.status === 'complete' && isYouTubeVideo(tab.url)) {
     try {
-      // Instead of reloading, just ensure our content script is injected
       await chrome.scripting.executeScript({
         target: { tabId },
         func: () => {
-          // Set a flag to indicate the extension is loaded
           if (!window.ytBookmarkExtensionLoaded) {
             window.ytBookmarkExtensionLoaded = true;
             console.log('YouTube Bookmark Extension: Content script initialized');
-            
-            // Dispatch an event to let any existing content script know we're ready
             document.dispatchEvent(new CustomEvent('ytBookmarkExtensionReady'));
           }
         }
       });
       console.log(`Content script injected for YouTube video on tab ${tabId}`);
     } catch (error) {
-      // This is normal for some tabs (like chrome:// pages)
       console.log('Could not inject script on tab', tabId, ':', error.message);
     }
   }
 });
 
-// Migrate data from older versions
 async function migrateDataIfNeeded() {
   try {
     const data = await chrome.storage.local.get(null);
     let hasChanges = false;
-    
+
     if (data.settings && !data.videoSettings) {
       console.log('Migrating data from v1.0 to v2.0...');
       const videoSettings = {};
@@ -217,11 +195,11 @@ async function migrateDataIfNeeded() {
       hasChanges = true;
       console.log('Settings data migration completed');
     }
-    
+
     if (data.bookmarks) {
       let bookmarksChanged = false;
       const updatedBookmarks = { ...data.bookmarks };
-      
+
       Object.keys(updatedBookmarks).forEach(videoId => {
         const bookmarks = updatedBookmarks[videoId];
         if (Array.isArray(bookmarks)) {
@@ -237,19 +215,19 @@ async function migrateDataIfNeeded() {
           });
         }
       });
-      
+
       if (bookmarksChanged) {
         await chrome.storage.local.set({ bookmarks: updatedBookmarks });
         hasChanges = true;
         console.log('Bookmarks data migration completed');
       }
     }
-    
+
     if (data.promptEnabled === undefined) {
       await chrome.storage.local.set({ promptEnabled: true });
       hasChanges = true;
     }
-    
+
     if (hasChanges) {
       console.log('Data migration completed successfully');
     } else {
@@ -260,23 +238,22 @@ async function migrateDataIfNeeded() {
   }
 }
 
-// Clean up old bookmark and settings data
 async function cleanupOldData() {
   try {
     const data = await chrome.storage.local.get(['bookmarks', 'videoSettings']);
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
     const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
-    
+
     let hasChanges = false;
-    
+
     if (data.bookmarks) {
       Object.keys(data.bookmarks).forEach(videoId => {
         const bookmarks = data.bookmarks[videoId];
         if (Array.isArray(bookmarks) && bookmarks.length > 0) {
-          const filteredBookmarks = bookmarks.filter(bookmark => 
+          const filteredBookmarks = bookmarks.filter(bookmark =>
             bookmark.timestamp && bookmark.timestamp > ninetyDaysAgo
           );
-          
+
           if (filteredBookmarks.length !== bookmarks.length) {
             if (filteredBookmarks.length === 0) {
               delete data.bookmarks[videoId];
@@ -288,7 +265,7 @@ async function cleanupOldData() {
         }
       });
     }
-    
+
     if (data.videoSettings) {
       Object.keys(data.videoSettings).forEach(videoId => {
         const settings = data.videoSettings[videoId];
@@ -298,7 +275,7 @@ async function cleanupOldData() {
         }
       });
     }
-    
+
     if (hasChanges) {
       await chrome.storage.local.set({
         bookmarks: data.bookmarks || {},
@@ -313,19 +290,15 @@ async function cleanupOldData() {
   }
 }
 
-// Create cleanup alarm
 function createCleanupAlarm() {
   chrome.alarms.create('cleanup-old-data', {
-    delayInMinutes: 60, // 1 hour after extension load
-    periodInMinutes: 24 * 60 // Once per day
+    delayInMinutes: 60,
+    periodInMinutes: 24 * 60
   });
   console.log('Cleanup alarm scheduled');
 }
-
-// Context menu creation function with error handling
 function createContextMenus() {
   try {
-    // Check if contextMenus API is available
     if (!chrome.contextMenus) {
       console.warn('Context menus API not available');
       return;
@@ -347,7 +320,7 @@ function createContextMenus() {
           '*://*.youtube.com/embed/*'
         ]
       });
-      
+
       chrome.contextMenus.create({
         id: 'show-bookmarks',
         title: 'Show video bookmarks',
@@ -358,7 +331,7 @@ function createContextMenus() {
           '*://*.youtube.com/embed/*'
         ]
       });
-      
+
       chrome.contextMenus.create({
         id: 'separator',
         type: 'separator',
@@ -369,7 +342,7 @@ function createContextMenus() {
           '*://*.youtube.com/embed/*'
         ]
       });
-      
+
       chrome.contextMenus.create({
         id: 'toggle-prompt',
         title: 'Toggle settings prompt',
@@ -380,7 +353,7 @@ function createContextMenus() {
           '*://*.youtube.com/embed/*'
         ]
       });
-      
+
       console.log('Context menus created successfully');
     });
   } catch (error) {
@@ -388,10 +361,8 @@ function createContextMenus() {
   }
 }
 
-// Setup context menu click handler with proper checking
 function setupContextMenuHandler() {
   try {
-    // Check if both contextMenus API and onClicked are available
     if (chrome.contextMenus && chrome.contextMenus.onClicked && chrome.contextMenus.onClicked.addListener) {
       chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         console.log(`Context menu clicked: ${info.menuItemId}`);
@@ -417,8 +388,6 @@ function setupContextMenuHandler() {
     console.error('Failed to setup context menu handler:', error.message);
   }
 }
-
-// Handle extension installation/update
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
     await chrome.storage.local.set({
@@ -427,7 +396,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
       videoSettings: {}
     });
     console.log('YouTube Bookmark & Settings Pro installed at:', new Date().toISOString());
-    
+
     chrome.tabs.create({
       url: 'https://youtube.com',
       active: true
@@ -436,16 +405,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     await migrateDataIfNeeded();
     console.log('YouTube Bookmark & Settings Pro updated to version', chrome.runtime.getManifest().version);
   }
-
-  // Create context menus and setup handler with a small delay to ensure APIs are ready
   setTimeout(() => {
     createContextMenus();
     setupContextMenuHandler();
     createCleanupAlarm();
   }, 100);
 });
-
-// Create cleanup alarm and context menus on startup
 chrome.runtime.onStartup.addListener(() => {
   console.log('Service worker started at:', new Date().toISOString());
   setTimeout(() => {
@@ -454,16 +419,12 @@ chrome.runtime.onStartup.addListener(() => {
     createCleanupAlarm();
   }, 100);
 });
-
-// Listen for cleanup alarm
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'cleanup-old-data') {
     console.log('Cleanup alarm triggered at:', new Date().toISOString());
     await cleanupOldData();
   }
 });
-
-// Handle messages from content script or popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Message received:', request.action);
   switch (request.action) {
@@ -477,7 +438,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ bookmarks: result.bookmarks || {} });
       });
       return true;
-      
+
     case 'getSettings':
       chrome.storage.local.get(['videoSettings', 'promptEnabled'], (result) => {
         if (chrome.runtime.lastError) {
@@ -485,13 +446,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           sendResponse({ error: 'Failed to get settings' });
           return;
         }
-        sendResponse({ 
+        sendResponse({
           videoSettings: result.videoSettings || {},
-          promptEnabled: result.promptEnabled !== false 
+          promptEnabled: result.promptEnabled !== false
         });
       });
       return true;
-      
+
     case 'saveBookmark':
       chrome.storage.local.get(['bookmarks'], (result) => {
         if (chrome.runtime.lastError) {
@@ -501,10 +462,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
         const bookmarks = result.bookmarks || {};
         const { videoId, bookmark } = request;
-        
+
         if (!bookmarks[videoId]) bookmarks[videoId] = [];
         bookmarks[videoId].push(bookmark);
-        
+
         chrome.storage.local.set({ bookmarks }, () => {
           if (chrome.runtime.lastError) {
             console.error('Failed to save bookmark:', chrome.runtime.lastError);
@@ -515,7 +476,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       });
       return true;
-      
+
     case 'deleteBookmark':
       chrome.storage.local.get(['bookmarks'], (result) => {
         if (chrome.runtime.lastError) {
@@ -525,14 +486,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
         const bookmarks = result.bookmarks || {};
         const { videoId, index } = request;
-        
+
         if (bookmarks[videoId] && bookmarks[videoId][index] !== undefined) {
           bookmarks[videoId].splice(index, 1);
-          
+
           if (bookmarks[videoId].length === 0) {
             delete bookmarks[videoId];
           }
-          
+
           chrome.storage.local.set({ bookmarks }, () => {
             if (chrome.runtime.lastError) {
               console.error('Failed to delete bookmark:', chrome.runtime.lastError);
@@ -546,7 +507,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       });
       return true;
-      
+
     case 'updateBookmark':
       chrome.storage.local.get(['bookmarks'], (result) => {
         if (chrome.runtime.lastError) {
@@ -556,10 +517,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
         const bookmarks = result.bookmarks || {};
         const { videoId, index, bookmark } = request;
-        
+
         if (bookmarks[videoId] && bookmarks[videoId][index] !== undefined) {
           bookmarks[videoId][index] = bookmark;
-          
+
           chrome.storage.local.set({ bookmarks }, () => {
             if (chrome.runtime.lastError) {
               console.error('Failed to update bookmark:', chrome.runtime.lastError);
@@ -573,7 +534,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       });
       return true;
-      
+
     case 'saveVideoSettings':
       chrome.storage.local.get(['videoSettings'], (result) => {
         if (chrome.runtime.lastError) {
@@ -583,12 +544,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
         const settings = result.videoSettings || {};
         const { videoId, videoSettings } = request;
-        
+
         settings[videoId] = {
           ...videoSettings,
           timestamp: Date.now()
         };
-        
+
         chrome.storage.local.set({ videoSettings: settings }, () => {
           if (chrome.runtime.lastError) {
             console.error('Failed to save video settings:', chrome.runtime.lastError);
@@ -599,7 +560,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       });
       return true;
-      
+
     case 'exportData':
       chrome.storage.local.get(null, (result) => {
         if (chrome.runtime.lastError) {
@@ -610,7 +571,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ data: result });
       });
       return true;
-      
+
     case 'importData':
       const { data } = request;
       chrome.storage.local.set(data, () => {
@@ -622,7 +583,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true });
       });
       return true;
-      
+
     case 'clearAllData':
       chrome.storage.local.clear(() => {
         if (chrome.runtime.lastError) {
@@ -644,14 +605,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       });
       return true;
-      
+
     default:
       console.warn('Unknown message action:', request.action);
       sendResponse({ error: 'Unknown action' });
   }
 });
-
-// Export functions for debugging
 globalThis.ytBookmarkBackground = {
   executeBookmarkCommand,
   toggleSettingsPrompt,
