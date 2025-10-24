@@ -34,6 +34,7 @@ YT_SmartSave is a **Chrome extension** that allows users to **save YouTube video
 ---
 
 ## File Structure
+```
 YT_SmartSave/
 │
 ├── background.js # Handles background processes
@@ -46,4 +47,4 @@ YT_SmartSave/
 │ ├── icon48.png
 │ └── icon128.png
 └── README.md
-
+```
